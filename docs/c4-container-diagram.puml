@@ -1,0 +1,31 @@
+@startuml CinemaAbyss_Container_Diagram
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Container Diagram - CinemaAbyss (To-Be Architecture)
+
+Person(user, "User", "Viewer / subscriber of the CinemaAbyss platform")
+
+System_Boundary(cinemaabyss, "CinemaAbyss Platform") {
+    Container(proxy, "API Gateway (Proxy Service)", "Go", "Routes requests using Strangler Fig pattern with feature flags for gradual migration. Port 8000")
+    Container(monolith, "Monolith", "Go", "Handles users, payments, subscriptions. Port 8080")
+    Container(movies, "Movies Service", "Go", "Handles movie metadata, ratings, genres. Extracted from monolith. Port 8081")
+    Container(events, "Events Service", "Go", "Produces and consumes events for inter-service communication. Port 8082")
+    ContainerDb(postgres, "PostgreSQL", "PostgreSQL 14", "Stores users, movies, payments, subscriptions, views, ratings")
+    ContainerQueue(kafka, "Kafka", "Apache Kafka", "Message broker for async event-driven communication. Topics: movie-events, user-events, payment-events")
+}
+
+Rel(user, proxy, "Sends API requests", "HTTP/REST")
+
+Rel(proxy, monolith, "Proxies /api/users, /api/payments, /api/subscriptions", "HTTP")
+Rel(proxy, movies, "Proxies /api/movies (gradual migration)", "HTTP")
+Rel(proxy, events, "Proxies /api/events/*", "HTTP")
+
+Rel(monolith, postgres, "Reads/writes user, payment, subscription data", "SQL")
+Rel(movies, postgres, "Reads/writes movie data", "SQL")
+
+Rel(events, kafka, "Produces events", "Kafka Producer")
+Rel(events, kafka, "Consumes events", "Kafka Consumer")
+
+@enduml
