@@ -39,7 +39,7 @@ spec:
           {{- toYaml .Values.proxyService.resources | nindent 10 }}
         readinessProbe:
           httpGet:
-            path: /ready
+            path: /health
             port: {{ .Values.proxyService.service.targetPort }}
           initialDelaySeconds: 5
           periodSeconds: 10
